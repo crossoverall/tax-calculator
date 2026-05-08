@@ -229,7 +229,7 @@
       <div class="result-row">
         <span class="result-label">
           PVD
-          <span class="tip">?<span class="tip-box">ยอดรวม PVD ทั้งหมดที่นำมาคิด<br>= ส่วนนายจ้าง + ส่วนกำไรทั้งหมด</span></span>
+          <span class="tip">?<span class="tip-box">ยอดรวม PVD ทั้งหมดที่นำมาคิด<br>= ส่วนนายจ้าง + ส่วนกำไร</span></span>
         </span>
         <span class="result-value" id="res-pvd"></span>
       </div>
@@ -283,7 +283,7 @@
 
       const excess  = Math.max(0, severance - 600000);
       const pvd     = pvdEmployer + pvdProfit;
-      const taxable = ((excess + pvd) - (7000 * years)) * 0.5;
+      const taxable = Math.max(0, ((excess + pvd) - (7000 * years)) * 0.5);
       const tax     = calcProgressiveTax(taxable);
 
       document.getElementById('res-excess').textContent  = fmt(excess);
