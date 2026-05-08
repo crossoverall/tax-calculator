@@ -141,6 +141,53 @@
     }
 
     .reset-btn:hover { background: #f1f5f9; color: #475569; }
+
+    .tip {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background: #cbd5e1;
+      color: #475569;
+      font-size: 0.65rem;
+      font-weight: 700;
+      cursor: default;
+      margin-left: 5px;
+      flex-shrink: 0;
+    }
+
+    .tip .tip-box {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1e293b;
+      color: #f1f5f9;
+      font-size: 0.75rem;
+      font-weight: 400;
+      line-height: 1.5;
+      padding: 8px 10px;
+      border-radius: 7px;
+      white-space: nowrap;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .tip .tip-box::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: #1e293b;
+    }
+
+    .tip:hover .tip-box { display: block; }
   </style>
 </head>
 <body>
@@ -173,19 +220,31 @@
 
     <div class="results" id="results">
       <div class="result-row">
-        <span class="result-label">เงินชดเชยส่วนที่ยกเว้น</span>
-        <span class="result-value" id="res-exempt"></span>
+        <span class="result-label">
+          เงินชดเชยส่วนเกิน
+          <span class="tip">?<span class="tip-box">เงินชดเชยที่ได้รับ หักด้วยส่วนที่ได้รับยกเว้น 600,000 บาท<br>= เงินชดเชย − 600,000</span></span>
+        </span>
+        <span class="result-value" id="res-excess"></span>
       </div>
       <div class="result-row">
-        <span class="result-label">ค่าใช้จ่ายหักตามปี (7,000 × ปี)</span>
-        <span class="result-value" id="res-deduction"></span>
+        <span class="result-label">
+          PVD
+          <span class="tip">?<span class="tip-box">ยอดรวม PVD ทั้งหมดที่นำมาคิด<br>= ส่วนนายจ้าง + ส่วนกำไรทั้งหมด</span></span>
+        </span>
+        <span class="result-value" id="res-pvd"></span>
       </div>
       <div class="result-row">
-        <span class="result-label">เงินที่นำมาคำนวณภาษี</span>
+        <span class="result-label">
+          รวมส่วนที่นำมาคิดภาษี
+          <span class="tip">?<span class="tip-box">= (เงินชดเชยส่วนเกิน + PVD − ค่าใช้จ่าย) × 0.5<br>ค่าใช้จ่าย = 7,000 × จำนวนปีที่ทำงาน</span></span>
+        </span>
         <span class="result-value" id="res-taxable"></span>
       </div>
       <div class="result-row highlight">
-        <span class="result-label">ภาษีที่ต้องจ่าย</span>
+        <span class="result-label">
+          ภาษีที่ต้องจ่าย
+          <span class="tip">?<span class="tip-box">คำนวณจากอัตราภาษีก้าวหน้า<br>0–300k: 5% / 300k–500k: 10%<br>500k–750k: 15% / 750k–1M: 20%<br>1M–2M: 25% / 2M–4M: 30% / >4M: 35%</span></span>
+        </span>
         <span class="result-value" id="res-tax"></span>
       </div>
       <button class="reset-btn" onclick="reset()">ล้างข้อมูล</button>
@@ -222,15 +281,15 @@
       }
       errorEl.style.display = 'none';
 
-      const exempt    = 600000;
-      const deduction = 7000 * years;
-      const taxable   = (((severance - exempt) + pvdEmployer + pvdProfit) - deduction) * 0.5;
-      const tax       = calcProgressiveTax(taxable);
+      const excess  = Math.max(0, severance - 600000);
+      const pvd     = pvdEmployer + pvdProfit;
+      const taxable = ((excess + pvd) - (7000 * years)) * 0.5;
+      const tax     = calcProgressiveTax(taxable);
 
-      document.getElementById('res-exempt').textContent    = fmt(exempt);
-      document.getElementById('res-deduction').textContent = fmt(deduction);
-      document.getElementById('res-taxable').textContent   = fmt(taxable);
-      document.getElementById('res-tax').textContent       = fmt(tax);
+      document.getElementById('res-excess').textContent  = fmt(excess);
+      document.getElementById('res-pvd').textContent     = fmt(pvd);
+      document.getElementById('res-taxable').textContent = fmt(taxable);
+      document.getElementById('res-tax').textContent     = fmt(tax);
 
       document.getElementById('results').classList.add('show');
     }
