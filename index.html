@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>คำนวณภาษีเงินชดเชย + PVD</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f4f8;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+      width: 100%;
+      max-width: 480px;
+      padding: 36px 32px 32px;
+    }
+
+    h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      font-size: 0.82rem;
+      color: #64748b;
+      margin-bottom: 28px;
+    }
+
+    .field {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+
+    .label-en {
+      font-weight: 400;
+      color: #94a3b8;
+      font-size: 0.78rem;
+      margin-left: 4px;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 1rem;
+      color: #1e293b;
+      transition: border-color 0.2s;
+      outline: none;
+      appearance: none;
+    }
+
+    input[type="number"]:focus {
+      border-color: #6366f1;
+    }
+
+    button {
+      width: 100%;
+      padding: 13px;
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.2s;
+    }
+
+    button:hover { background: #4f46e5; }
+
+    .results {
+      margin-top: 24px;
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 20px;
+      display: none;
+    }
+
+    .results.show { display: block; }
+
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 8px 0;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 0.9rem;
+    }
+
+    .result-row:last-child { border-bottom: none; }
+
+    .result-label { color: #475569; }
+
+    .result-value {
+      font-weight: 600;
+      color: #1e293b;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .result-row.highlight .result-label { color: #dc2626; font-weight: 600; }
+    .result-row.highlight .result-value { color: #dc2626; font-size: 1.15rem; }
+
+    .error {
+      color: #dc2626;
+      font-size: 0.82rem;
+      margin-top: 10px;
+      display: none;
+    }
+
+    .reset-btn {
+      background: none;
+      color: #94a3b8;
+      font-size: 0.8rem;
+      font-weight: 400;
+      margin-top: 10px;
+      padding: 6px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+    }
+
+    .reset-btn:hover { background: #f1f5f9; color: #475569; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>คำนวณภาษีเงินชดเชย + PVD</h1>
+    <p class="subtitle">สำหรับผู้ออกจากงานที่ได้รับเงินชดเชยและกองทุนสำรองเลี้ยงชีพ</p>
+
+    <div class="field">
+      <label>เงินชดเชย <span class="label-en">Severance Pay (บาท)</span></label>
+      <input type="number" id="severance" placeholder="300000" min="0" step="0.01" />
+    </div>
+
+    <div class="field">
+      <label>PVD ส่วนนายจ้าง <span class="label-en">Employer Contribution (บาท)</span></label>
+      <input type="number" id="pvdEmployer" placeholder="200000" min="0" step="0.01" />
+    </div>
+
+    <div class="field">
+      <label>PVD ส่วนกำไร <span class="label-en">Investment Profit (บาท)</span></label>
+      <input type="number" id="pvdProfit" placeholder="50000" min="0" step="0.01" />
+    </div>
+
+    <div class="field">
+      <label>จำนวนปีที่ทำงาน <span class="label-en">Years of Service</span></label>
+      <input type="number" id="years" placeholder="10" min="1" step="1" />
+    </div>
+
+    <button onclick="calculate()">คำนวณภาษี</button>
+    <div class="error" id="errorMsg"></div>
+
+    <div class="results" id="results">
+      <div class="result-row">
+        <span class="result-label">เงินชดเชยส่วนที่ยกเว้น</span>
+        <span class="result-value" id="res-exempt"></span>
+      </div>
+      <div class="result-row">
+        <span class="result-label">ค่าใช้จ่ายหักตามปี (7,000 × ปี)</span>
+        <span class="result-value" id="res-deduction"></span>
+      </div>
+      <div class="result-row">
+        <span class="result-label">เงินที่นำมาคำนวณภาษี</span>
+        <span class="result-value" id="res-taxable"></span>
+      </div>
+      <div class="result-row highlight">
+        <span class="result-label">ภาษีที่ต้องจ่าย</span>
+        <span class="result-value" id="res-tax"></span>
+      </div>
+      <button class="reset-btn" onclick="reset()">ล้างข้อมูล</button>
+    </div>
+  </div>
+
+  <script>
+    function fmt(n) {
+      return n.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' บาท';
+    }
+
+    function calcProgressiveTax(income) {
+      if (income <= 0)        return 0;
+      if (income <= 300000)   return income * 0.05;
+      if (income <= 500000)   return 300000 * 0.05 + (income - 300000) * 0.1;
+      if (income <= 750000)   return 300000 * 0.05 + 200000 * 0.1 + (income - 500000) * 0.15;
+      if (income <= 1000000)  return 300000 * 0.05 + 200000 * 0.1 + 250000 * 0.15 + (income - 750000) * 0.2;
+      if (income <= 2000000)  return 300000 * 0.05 + 200000 * 0.1 + 250000 * 0.15 + 250000 * 0.2 + (income - 1000000) * 0.25;
+      if (income <= 4000000)  return 300000 * 0.05 + 200000 * 0.1 + 250000 * 0.15 + 250000 * 0.2 + 1000000 * 0.25 + (income - 2000000) * 0.3;
+      return                         300000 * 0.05 + 200000 * 0.1 + 250000 * 0.15 + 250000 * 0.2 + 1000000 * 0.25 + 2000000 * 0.3 + (income - 4000000) * 0.35;
+    }
+
+    function calculate() {
+      const severance   = parseFloat(document.getElementById('severance').value) || 0;
+      const pvdEmployer = parseFloat(document.getElementById('pvdEmployer').value) || 0;
+      const pvdProfit   = parseFloat(document.getElementById('pvdProfit').value) || 0;
+      const years       = parseFloat(document.getElementById('years').value) || 0;
+
+      const errorEl = document.getElementById('errorMsg');
+      if (years <= 0) {
+        errorEl.textContent = 'กรุณากรอกจำนวนปีที่ทำงาน';
+        errorEl.style.display = 'block';
+        return;
+      }
+      errorEl.style.display = 'none';
+
+      const exempt    = 600000;
+      const deduction = 7000 * years;
+      const taxable   = (((severance - exempt) + pvdEmployer + pvdProfit) - deduction) * 0.5;
+      const tax       = calcProgressiveTax(taxable);
+
+      document.getElementById('res-exempt').textContent    = fmt(exempt);
+      document.getElementById('res-deduction').textContent = fmt(deduction);
+      document.getElementById('res-taxable').textContent   = fmt(taxable);
+      document.getElementById('res-tax').textContent       = fmt(tax);
+
+      document.getElementById('results').classList.add('show');
+    }
+
+    function reset() {
+      ['severance','pvdEmployer','pvdProfit','years'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('results').classList.remove('show');
+      document.getElementById('errorMsg').style.display = 'none';
+    }
+  </script>
+</body>
+</html>
